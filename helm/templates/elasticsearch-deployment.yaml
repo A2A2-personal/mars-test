@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.elasticsearch.name }}
+  labels:
+    app: {{ .Values.elasticsearch.name }}
+spec:
+  {{- if not .Values.elasticsearch.autoscaling.enabled }}
+  replicas: {{ .Values.elasticsearch.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.elasticsearch.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.elasticsearch.name }}
+    spec:
+      containers:
+        - name: {{ .Values.elasticsearch.name }}
+          image: "{{ .Values.elasticsearch.image.repository }}:{{ .Values.elasticsearch.image.tag | default .Chart.AppVersion }}"
+          env:
+            - name: discovery.type
+              value: single-node
+          ports:
+            - containerPort: {{ .Values.elasticsearch.service.port }}
+          {{- with .Values.elasticsearch.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.elasticsearch.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.elasticsearch.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.elasticsearch.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
